@@ -50,7 +50,7 @@ bool CProfile_SayText2 = false;
  * 
  * On error/Errors:   If the client is not connected an error will be thrown.
  */
-stock void CPrintToChat(int client, char[] szMessage, any:...)
+stock void CPrintToChat(int client, char[] szMessage, any ...)
 {
 	if (client <= 0 || client > MaxClients)
 		ThrowError("Invalid client index %d", client);
@@ -83,7 +83,7 @@ stock void CPrintToChat(int client, char[] szMessage, any:...)
  * @param szMessage   Message (formatting rules)
  * @return			  No return
  */
-stock void CPrintToChatAll(const char[] szMessage, any:...)
+stock void CPrintToChatAll(const char[] szMessage, any ...)
 {
 	char szBuffer[MAX_MESSAGE_LENGTH];
 	
@@ -148,7 +148,7 @@ stock void CPrintToChatEx(int client, int author, const char[] szMessage, any ..
  * 
  * On error/Errors:   If the author is not connected an error will be thrown.
  */
-stock void CPrintToChatAllEx(int author, const char[] szMessage, any:...)
+stock void CPrintToChatAllEx(int author, const char[] szMessage, any ...)
 {
 	if (author < 0 || author > MaxClients)
 		ThrowError("Invalid client index %d", author);
