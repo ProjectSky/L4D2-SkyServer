@@ -13,12 +13,21 @@
 ConVar 
 cvar_gunfiresi,
 cvar_gunfiretank,
+cvar_waterslow,
 cvar_pillsdecay,
-cvar_survivorlimp,
-cvar_waterslow;
+cvar_survivorlimp;
 
 bool
-g_bLateLoad;
+g_bLateLoad,
+g_bGunfiresi,
+g_bGunfiretank,
+g_bwaterslow;
+
+int
+g_iSurvivorlimp;
+
+float
+g_fPillsdecay;
 
 public Plugin myinfo =
 {
@@ -44,25 +53,44 @@ public void OnPluginStart()
 	cvar_pillsdecay = FindConVar("pain_pills_decay_rate");
 	cvar_survivorlimp = FindConVar("survivor_limp_health");
 
+	cvar_gunfiresi.AddChangeHook(cvarChanged);
+	cvar_gunfiretank.AddChangeHook(cvarChanged);
+	cvar_waterslow.AddChangeHook(cvarChanged);
+	cvar_pillsdecay.AddChangeHook(cvarChanged);
+	cvar_survivorlimp.AddChangeHook(cvarChanged);
+
 	if (g_bLateLoad) 
 	{
 		for (int i = 1; i <= MaxClients; i++) 
 		{
 			if (!IsValidClient(i, TEAM_INFECTED)) continue;
 
-			OnClientPutInServer(i);
+			SDKHook(i, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 		}
 	}
 }
 
-public void OnClientPutInServer(int client)
+public void cvarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
+	g_bGunfiresi = cvar_gunfiresi.BoolValue;
+	g_bGunfiretank = cvar_gunfiretank.BoolValue;
+	g_bwaterslow = cvar_waterslow.BoolValue;
+	g_fPillsdecay = cvar_pillsdecay.FloatValue;
+	g_iSurvivorlimp = cvar_survivorlimp.IntValue;
 }
 
-public void OnClientDisconnect(int client)
+public void OnConfigsExecuted()
 {
-	SDKUnhook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
+	g_bGunfiresi = cvar_gunfiresi.BoolValue;
+	g_bGunfiretank = cvar_gunfiretank.BoolValue;
+	g_bwaterslow = cvar_waterslow.BoolValue;
+	g_fPillsdecay = cvar_pillsdecay.FloatValue;
+	g_iSurvivorlimp = cvar_survivorlimp.IntValue;
+}
+
+public void OnClientPostAdminCheck(int client)
+{
+	SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 }
 
 public void OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damageType)
@@ -71,16 +99,16 @@ public void OnTakeDamagePost(int victim, int attacker, int inflictor, float dama
 	{
 		int zclass = GetEntProp(victim, Prop_Send, "m_zombieClass");
 		
-		if (zclass != ZC_TANK && cvar_gunfiresi.BoolValue)
+		if (zclass != ZC_TANK && g_bGunfiresi)
 			SetEntPropFloat(victim, Prop_Send, "m_flVelocityModifier", 1.0);
-		else if (zclass == ZC_TANK && cvar_gunfiretank.BoolValue)
+		else if (zclass == ZC_TANK && g_bGunfiretank)
 			SetEntPropFloat(victim, Prop_Send, "m_flVelocityModifier", 1.0);
 	}
 }
 
 public Action L4D_OnGetRunTopSpeed(int client, float &retVal)
 {
-	if (!cvar_waterslow.BoolValue) return Plugin_Continue;
+	if (!g_bwaterslow) return Plugin_Continue;
 	if (IsValidClient(client, TEAM_SURVIVOR))
 	{
 		bool InWater = (GetEntityFlags(client) & FL_INWATER) ? true : false;
@@ -106,18 +134,18 @@ bool IsValidClient(int client, int team = 0)
 
 bool IsLimping(int client)
 {
-	if (GetSurvivorPermanentHealth(client) + GetSurvivorTempHealth(client) < cvar_survivorlimp.IntValue)
+	if (GetSurvivorPermanentHealth(client) + GetSurvivorTempHealth(client) < g_iSurvivorlimp)
 		return true;
 	return false;
 }
 
-stock int GetSurvivorPermanentHealth(int client)
+int GetSurvivorPermanentHealth(int client)
 {
 	return GetEntProp(client, Prop_Send, "m_iHealth");
 }
 
-stock int GetSurvivorTempHealth(int client)
+int GetSurvivorTempHealth(int client)
 {
-	int temphp = RoundToCeil(GetEntPropFloat(client, Prop_Send, "m_healthBuffer") - ((GetGameTime() - GetEntPropFloat(client, Prop_Send, "m_healthBufferTime")) * cvar_pillsdecay.FloatValue)) - 1;
+	int temphp = RoundToCeil(GetEntPropFloat(client, Prop_Send, "m_healthBuffer") - ((GetGameTime() - GetEntPropFloat(client, Prop_Send, "m_healthBufferTime")) * g_fPillsdecay)) - 1;
 	return temphp > 0 ? temphp : 0;
 }
