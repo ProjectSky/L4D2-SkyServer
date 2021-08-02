@@ -10,30 +10,30 @@
 #define TEAM_INFECTED 3
 #define ZC_TANK 8
 
-ConVar 
+static ConVar 
 cvar_gunfiresi,
 cvar_gunfiretank,
 cvar_waterslow,
 cvar_pillsdecay,
 cvar_survivorlimp;
 
-bool
+static bool
 g_bLateLoad,
 g_bGunfiresi,
 g_bGunfiretank,
 g_bwaterslow;
 
-int
+static int
 g_iSurvivorlimp;
 
-float
+static float
 g_fPillsdecay;
 
 public Plugin myinfo =
 {
 	name = "[L4D2] Slowdown Control",
 	author = "ProjectSky",
-	version = "0.0.2",
+	version = "0.0.3",
 	description = "Manages gunfire water slowdown",
 	url = "me@imsky.cc"
 }
@@ -46,31 +46,33 @@ public APLRes AskPluginLoad2(Handle plugin, bool late, char[] error, int errMax)
 
 public void OnPluginStart()
 {
-	cvar_gunfiresi = CreateConVar("l4d2_slowdown_si", "1", "Manages slowdown from gunfire for SI", FCVAR_NOTIFY);
-	cvar_gunfiretank = CreateConVar("l4d2_slowdown_tank", "1", "Manages slowdown from gunfire for the Tank", FCVAR_NOTIFY);
-	cvar_waterslow = CreateConVar("l4d2_slowdown_water", "0", "Manages survivor speed in the water during Tank fights", FCVAR_NOTIFY);
+	cvar_gunfiresi = CreateConVar("l4d2_slowdown_si", "0", "Manages slowdown from gunfire for SI", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	cvar_gunfiretank = CreateConVar("l4d2_slowdown_tank", "0", "Manages slowdown from gunfire for the Tank", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	cvar_waterslow = CreateConVar("l4d2_slowdown_water", "1", "Manages survivor speed in the water during Tank fights", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 
 	cvar_pillsdecay = FindConVar("pain_pills_decay_rate");
 	cvar_survivorlimp = FindConVar("survivor_limp_health");
 
-	cvar_gunfiresi.AddChangeHook(cvarChanged);
-	cvar_gunfiretank.AddChangeHook(cvarChanged);
-	cvar_waterslow.AddChangeHook(cvarChanged);
-	cvar_pillsdecay.AddChangeHook(cvarChanged);
-	cvar_survivorlimp.AddChangeHook(cvarChanged);
+	GetCvars();
+	cvar_gunfiresi.AddChangeHook(view_as<ConVarChanged>(GetCvars));
+	cvar_gunfiretank.AddChangeHook(view_as<ConVarChanged>(GetCvars));
+	cvar_waterslow.AddChangeHook(view_as<ConVarChanged>(GetCvars));
+	cvar_pillsdecay.AddChangeHook(view_as<ConVarChanged>(GetCvars));
+	cvar_survivorlimp.AddChangeHook(view_as<ConVarChanged>(GetCvars));
 
 	if (g_bLateLoad) 
 	{
-		for (int i = 1; i <= MaxClients; i++) 
+		int i, maxplayers = MaxClients;
+		for (i = 1; i <= maxplayers; i++) 
 		{
-			if (!IsValidClient(i, TEAM_INFECTED)) continue;
+			if (!IsClientInGame(i)) continue;
 
 			SDKHook(i, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 		}
 	}
 }
 
-public void cvarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+void GetCvars()
 {
 	g_bGunfiresi = cvar_gunfiresi.BoolValue;
 	g_bGunfiretank = cvar_gunfiretank.BoolValue;
@@ -79,37 +81,32 @@ public void cvarChanged(ConVar convar, const char[] oldValue, const char[] newVa
 	g_iSurvivorlimp = cvar_survivorlimp.IntValue;
 }
 
-public void OnConfigsExecuted()
-{
-	g_bGunfiresi = cvar_gunfiresi.BoolValue;
-	g_bGunfiretank = cvar_gunfiretank.BoolValue;
-	g_bwaterslow = cvar_waterslow.BoolValue;
-	g_fPillsdecay = cvar_pillsdecay.FloatValue;
-	g_iSurvivorlimp = cvar_survivorlimp.IntValue;
-}
-
-public void OnClientPostAdminCheck(int client)
+public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_OnTakeDamagePost, OnTakeDamagePost);
 }
 
 public void OnTakeDamagePost(int victim, int attacker, int inflictor, float damage, int damageType)
 {
-	if (IsValidClient(victim, TEAM_INFECTED))
+	if (IsValidClient(victim) && GetClientTeam(victim) == TEAM_INFECTED)
 	{
 		int zclass = GetEntProp(victim, Prop_Send, "m_zombieClass");
 		
-		if (zclass != ZC_TANK && g_bGunfiresi)
+		if (zclass != ZC_TANK && !g_bGunfiresi)
+		{
 			SetEntPropFloat(victim, Prop_Send, "m_flVelocityModifier", 1.0);
-		else if (zclass == ZC_TANK && g_bGunfiretank)
+		}
+		else if (zclass == ZC_TANK && !g_bGunfiretank)
+		{
 			SetEntPropFloat(victim, Prop_Send, "m_flVelocityModifier", 1.0);
+		}
 	}
 }
 
 public Action L4D_OnGetRunTopSpeed(int client, float &retVal)
 {
-	if (!g_bwaterslow) return Plugin_Continue;
-	if (IsValidClient(client, TEAM_SURVIVOR))
+	if (g_bwaterslow) return Plugin_Continue;
+	if (IsValidClient(client) && GetClientTeam(client) == TEAM_SURVIVOR)
 	{
 		bool InWater = (GetEntityFlags(client) & FL_INWATER) ? true : false;
 		bool Adreff = GetEntProp(client, Prop_Send, "m_bAdrenalineActive") ? true : false;
@@ -127,16 +124,14 @@ public Action L4D_OnGetRunTopSpeed(int client, float &retVal)
 	return Plugin_Continue;
 }
 
-bool IsValidClient(int client, int team = 0)
+stock bool IsValidClient(int client)
 {
-	return client > 0 && client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == team;
+	return client > 0 && client <= MaxClients && IsClientInGame(client);
 }
 
 bool IsLimping(int client)
 {
-	if (GetSurvivorPermanentHealth(client) + GetSurvivorTempHealth(client) < g_iSurvivorlimp)
-		return true;
-	return false;
+	return GetSurvivorPermanentHealth(client) + GetSurvivorTempHealth(client) < g_iSurvivorlimp;
 }
 
 int GetSurvivorPermanentHealth(int client)
