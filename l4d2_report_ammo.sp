@@ -9,33 +9,33 @@
 
 static const char g_sWeaponNames[][][] =
 {
-	{"weapon_smg", "UZI"},
-	{"weapon_smg_silenced", "SMG"},
-	{"weapon_smg_mp5", "MP5"},
-	{"weapon_shotgun_chrome", "铁喷"},
-	{"weapon_pumpshotgun", "木喷"},
-	{"weapon_autoshotgun", "XM1014"},
-	{"weapon_shotgun_spas", "SPAS12"},
-	{"weapon_rifle", "M16"},
-	{"weapon_hunting_rifle", "M14"},
-	{"weapon_rifle_ak47", "AK47"},
-	{"weapon_rifle_sg552", "SG552"},
-	{"weapon_rifle_desert", "SCAR"},
-	{"weapon_rifle_m60", "M60"},
-	{"weapon_sniper_military", "G3SG1"},
-	{"weapon_sniper_awp", "AWP"},
-	{"weapon_sniper_scout", "鸟狙"},
-	{"weapon_grenade_launcher", "榴弹发射器"},
+	{"smg", "UZI"},
+	{"smg_silenced", "SMG"},
+	{"smg_mp5", "MP5"},
+	{"shotgun_chrome", "铁喷"},
+	{"pumpshotgun", "木喷"},
+	{"autoshotgun", "XM1014"},
+	{"shotgun_spas", "SPAS12"},
+	{"rifle", "M16"},
+	{"hunting_rifle", "M14"},
+	{"rifle_ak47", "AK47"},
+	{"rifle_sg552", "SG552"},
+	{"rifle_desert", "SCAR"},
+	{"rifle_m60", "M60"},
+	{"sniper_military", "G3SG1"},
+	{"sniper_awp", "AWP"},
+	{"sniper_scout", "鸟狙"},
+	{"grenade_launcher", "榴弹发射器"},
 };
 
 public Plugin myinfo =
 {
-	name        = "[L4D2] Report Primary weapon remaining ammo",
-	author      = "ProjectSky",
+	name = "[L4D2] Report Primary weapon remaining ammo",
+	author = "ProjectSky",
 	description = "Report remaining Ammo",
-	version     = "0.0.5",
-	url         = "me@imsky.cc"
-};
+	version = "0.0.5",
+	url = "me@imsky.cc"
+}
 
 public void OnPluginStart()
 {
@@ -62,7 +62,7 @@ Action Command_ReportAmmo(int client, int args)
 		GetEdictClassname(weapon, classname, sizeof(classname));
 		for (int i = 0; i < sizeof(g_sWeaponNames); i++)
 		{
-			if (strcmp(classname, g_sWeaponNames[i][0]) == 0)
+			if (strcmp(classname[7], g_sWeaponNames[i][0]) == 0)
 			{
 				strcopy(wName, sizeof(wName), g_sWeaponNames[i][1]);
 			}
