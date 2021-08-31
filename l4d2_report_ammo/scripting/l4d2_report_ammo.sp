@@ -4,6 +4,8 @@
 #include <sdktools>
 #include <colors>
 
+#define BENCHMARK 0
+
 #define TEAM_SURVIVOR 2
 #define PRIMARY_WEAPON 0
 
@@ -28,11 +30,19 @@ static const char g_sWeaponNames[][][] =
 	{"grenade_launcher", "榴弹发射器"},
 };
 
+#if BENCHMARK
+	#include <profiler>
+	Profiler g_profiler;
+#endif
+
+int
+g_iAmmoOffset;
+
 public Plugin myinfo =
 {
-	name = "[L4D2] Report Primary weapon remaining ammo",
+	name = "[L4D2] Report remaining ammo",
 	author = "ProjectSky",
-	description = "Report remaining Ammo",
+	description = "report primary weapon remaining ammo",
 	version = "0.0.6",
 	url = "me@imsky.cc"
 }
@@ -40,6 +50,8 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	RegConsoleCmd("sm_ammo", Command_ReportAmmo);
+
+	g_iAmmoOffset = FindSendPropInfo("CTerrorPlayer", "m_iAmmo");
 }
 
 Action Command_ReportAmmo(int client, int args)
@@ -59,7 +71,16 @@ Action Command_ReportAmmo(int client, int args)
 		clip = GetWeaponClip(weapon);
 		ammo = GetWeaponAmmo(client, weapon);
 
+		#if BENCHMARK
+			g_profiler = new Profiler();
+			g_profiler.Start();
+		#endif
 		FormatWeaponName(wName, sizeof(wName), weapon);
+
+		#if BENCHMARK
+			g_profiler.Stop();
+			PrintToChatAll("执行耗时: %f", g_profiler.Time);
+		#endif
 		
 		for (int i = 1; i <= MaxClients; i++)
 		{
@@ -99,9 +120,7 @@ int GetWeaponClip(int weapon)
 
 int GetWeaponAmmo(int client, int weapon)
 {
-	int offset_ammo = FindDataMapInfo(client, "m_iAmmo");
-
-	int offset = offset_ammo + (GetEntProp(weapon, Prop_Data, "m_iPrimaryAmmoType") * 4);
+	int offset = g_iAmmoOffset + (GetEntProp(weapon, Prop_Data, "m_iPrimaryAmmoType") * 4);
 
 	return GetEntData(client, offset);
 }
