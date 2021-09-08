@@ -3,19 +3,25 @@
 
 #include <sourcemod>
 #include <sdktools>
-#include <left4dhooks>
 
 #define TEAM_SURVIVOR 2
 
 enum
 {
-	HEALTH_FIRST_AID_KIT = (1 << 0),
-	HEALTH_DEFIBRILLATOR = (1 << 1),
-	HEALTH_PAIN_PILLS = (1 << 2),
-	HEALTH_ADRENALINE = (1 << 3),
-	THROWABLE_PIPE_BOMB = (1 << 4),
-	THROWABLE_MOLOTOV = (1 << 5),
-	THROWABLE_VOMITJAR = (1 << 6)
+	FIRST_AID_KIT = 1,
+	DEFIBRILLATOR,
+	PAIN_PILLS,
+	ADRENALINE,
+	PIPE_BOMB,
+	MOLOTOV,
+	VOMITJAR ,
+}
+
+enum
+{
+	THROW = 2,
+	KIT,
+	PILL,
 }
 
 public Plugin myinfo =
@@ -23,7 +29,7 @@ public Plugin myinfo =
 	name = "[L4D2] Starting Items",
 	author = "CircleSquared, Jacob, ProjectSky",
 	description = "Gives health items and throwables to survivors at the start of each round",
-	version = "1.3",
+	version = "1.6",
 	url = "none"
 }
 
@@ -38,7 +44,7 @@ g_bReadyUpAvailable = false;
 
 public void OnPluginStart()
 {
-	g_hItemType = CreateConVar("starting_item_flags", "0", "Item flags to give on leaving the saferoom (1: Kit, 2: Defib, 4: Pills, 8: Adren, 16: Pipebomb, 32: Molotov, 64: Bile)", FCVAR_NONE);
+	g_hItemType = CreateConVar("starting_item_flags", "0", "Item flags to give on leaving the saferoom (0: Disable, 1: Kit, 2: Defib, 3: Pills, 4: Adren, 5: Pipebomb, 6: Molotov, 7: Bile)", FCVAR_NONE, true, 0.0, true, 7.0);
 
 	GetCvars();
 	g_hItemType.AddChangeHook(view_as<ConVarChanged>(GetCvars));
@@ -66,69 +72,50 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnRoundIsLive()
 {
+	if (!g_iItemFlags) return;
+
 	int i, maxplayers = MaxClients;
 	for (i = 1; i <= maxplayers; i++)
 	{
-		if (IsClientInGame(i) && GetClientTeam(i) == TEAM_SURVIVOR)
+		if (IsClientInGame(i) && GetClientTeam(i) == TEAM_SURVIVOR && IsPlayerAlive(i))
 		{
-			GiveItems(i);
+			switch (g_iItemFlags)
+			{
+				case 1,2 : GiveItems(i, KIT);
+				case 3,4 : GiveItems(i, PILL);
+				case 5,6,7 : GiveItems(i, THROW);
+			}
 		}
 	}
 }
 
 public Action L4D_OnFirstSurvivorLeftSafeArea()
 {
-	if (!g_bReadyUpAvailable)
+	if (!g_iItemFlags) return;
+
+	else if (!g_bReadyUpAvailable)
 	{
-		int i, maxplayers = MaxClients;
-		for (i = 1; i <= maxplayers; i++)
-		{
-			if (IsClientInGame(i) && GetClientTeam(i) == TEAM_SURVIVOR)
-			{
-				GiveItems(i);
-			}
-		}
+		OnRoundIsLive();
 	}
 }
 
-void GiveItems(int client)
+void GiveItems(int client, int type)
 {
-	if (g_iItemFlags)
+	int items = GetPlayerWeaponSlot(client, type);
+	if (items == -1)
 	{
-		if (g_iItemFlags & HEALTH_FIRST_AID_KIT)
+		int flags = GetCommandFlags("give");
+		SetCommandFlags("give", flags & ~FCVAR_CHEAT);
+		switch (g_iItemFlags)
 		{
-			L4D2_RunScript("PlayerInstanceFromIndex(%d).GiveItem(\"%s\")", client, "first_aid_kit");
+			case FIRST_AID_KIT : FakeClientCommand(client, "give first_aid_kit");
+			case DEFIBRILLATOR : FakeClientCommand(client, "give defibrillator");
+			case PAIN_PILLS : FakeClientCommand(client, "give pain_pills");
+			case ADRENALINE : FakeClientCommand(client, "give adrenaline");
+			case PIPE_BOMB : FakeClientCommand(client, "give pipe_bomb");
+			case MOLOTOV : FakeClientCommand(client, "give molotov");
+			case VOMITJAR : FakeClientCommand(client, "give vomitjar");
 		}
-		else if (g_iItemFlags & HEALTH_DEFIBRILLATOR)
-		{
-			L4D2_RunScript("PlayerInstanceFromIndex(%d).GiveItem(\"%s\")", client, "defibrillator");
-		}
-		if (g_iItemFlags & HEALTH_PAIN_PILLS)
-		{
-			L4D2_RunScript("PlayerInstanceFromIndex(%d).GiveItem(\"%s\")", client, "pain_pills");
-		}
-		else if (g_iItemFlags & HEALTH_ADRENALINE)
-		{
-			L4D2_RunScript("PlayerInstanceFromIndex(%d).GiveItem(\"%s\")", client, "adrenaline");
-		}
-		if (g_iItemFlags & THROWABLE_PIPE_BOMB)
-		{
-			L4D2_RunScript("PlayerInstanceFromIndex(%d).GiveItem(\"%s\")", client, "pipe_bomb");
-		}
-		else if (g_iItemFlags & THROWABLE_MOLOTOV)
-		{
-			L4D2_RunScript("PlayerInstanceFromIndex(%d).GiveItem(\"%s\")", client, "molotov");
-		}
-		else if (g_iItemFlags & THROWABLE_VOMITJAR)
-		{
-			L4D2_RunScript("PlayerInstanceFromIndex(%d).GiveItem(\"%s\")", client, "vomitjar");
-		}
+		SetCommandFlags("give", flags);
 	}
-}
-
-void L4D2_RunScript(char[] code, any ...)
-{
-	char buffer[1006];
-	VFormat(buffer, sizeof(buffer), code, 2);
-	L4D2_ExecVScriptCode(buffer);
 }
