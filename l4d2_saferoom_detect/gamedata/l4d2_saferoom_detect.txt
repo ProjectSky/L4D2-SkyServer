@@ -1,0 +1,14 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"Signatures"
+		{
+			"Script_GetFlowPercentForPosition"
+			{
+				"library"	"server"
+				"linux"		"@_ZL32Script_GetFlowPercentForPosition6Vectorb"
+			}
+		}
+	}
+}
