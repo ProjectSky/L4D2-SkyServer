@@ -4,46 +4,21 @@
 #include <sdktools>
 #include <colors>
 
-#define BENCHMARK 0
-
-#define TEAM_SURVIVOR 2
-#define PRIMARY_WEAPON 0
-
-static const char g_sWeaponNames[][][] =
-{
-	{"smg", "UZI"},
-	{"smg_silenced", "SMG"},
-	{"smg_mp5", "MP5"},
-	{"shotgun_chrome", "铁喷"},
-	{"pumpshotgun", "木喷"},
-	{"autoshotgun", "XM1014"},
-	{"shotgun_spas", "SPAS12"},
-	{"rifle", "M16"},
-	{"hunting_rifle", "M14"},
-	{"rifle_ak47", "AK47"},
-	{"rifle_sg552", "SG552"},
-	{"rifle_desert", "SCAR"},
-	{"rifle_m60", "M60"},
-	{"sniper_military", "G3SG1"},
-	{"sniper_awp", "AWP"},
-	{"sniper_scout", "鸟狙"},
-	{"grenade_launcher", "榴弹发射器"},
-};
-
-#if BENCHMARK
-	#include <profiler>
-	Profiler g_profiler;
-#endif
+#define L4D_TEAM_SURVIVOR 2
+#define L4D_WEAPON_SLOT_PRIMARY 0
 
 int
 g_iAmmoOffset;
+
+StringMap
+g_hTrieWeaponList;
 
 public Plugin myinfo =
 {
 	name = "[L4D2] Report remaining ammo",
 	author = "ProjectSky",
 	description = "report primary weapon remaining ammo",
-	version = "0.0.6",
+	version = "0.0.7",
 	url = "me@imsky.cc"
 }
 
@@ -52,6 +27,25 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_ammo", Command_ReportAmmo);
 
 	g_iAmmoOffset = FindSendPropInfo("CTerrorPlayer", "m_iAmmo");
+
+	g_hTrieWeaponList = new StringMap();
+	g_hTrieWeaponList.SetString("smg", "UZI");
+	g_hTrieWeaponList.SetString("smg_silenced", "SMG");
+	g_hTrieWeaponList.SetString("smg_mp5", "MP5");
+	g_hTrieWeaponList.SetString("shotgun_chrome", "铁喷");
+	g_hTrieWeaponList.SetString("pumpshotgun", "木喷");
+	g_hTrieWeaponList.SetString("autoshotgun", "XM1014");
+	g_hTrieWeaponList.SetString("shotgun_spas", "SPAS12");
+	g_hTrieWeaponList.SetString("rifle", "M16");
+	g_hTrieWeaponList.SetString("hunting_rifle", "M14");
+	g_hTrieWeaponList.SetString("rifle_ak47", "AK47");
+	g_hTrieWeaponList.SetString("rifle_sg552", "SG552");
+	g_hTrieWeaponList.SetString("rifle_desert", "SCAR");
+	g_hTrieWeaponList.SetString("rifle_m60", "M60");
+	g_hTrieWeaponList.SetString("sniper_military", "G3SG1");
+	g_hTrieWeaponList.SetString("sniper_awp", "AWP");
+	g_hTrieWeaponList.SetString("sniper_scout", "鸟狙");
+	g_hTrieWeaponList.SetString("grenade_launcher", "榴弹发射器");
 }
 
 Action Command_ReportAmmo(int client, int args)
@@ -60,9 +54,9 @@ Action Command_ReportAmmo(int client, int args)
 	{
 		static char wName[32];
 		static int clip, ammo, weapon;
-		weapon = GetPlayerWeaponSlot(client, PRIMARY_WEAPON);
+		weapon = GetPlayerWeaponSlot(client, L4D_WEAPON_SLOT_PRIMARY);
 
-		if (!IsValidEntity(weapon) || GetClientTeam(client) != TEAM_SURVIVOR || !IsPlayerAlive(client))
+		if (!IsValidEntity(weapon) || GetClientTeam(client) != L4D_TEAM_SURVIVOR || !IsPlayerAlive(client))
 		{
 			CPrintToChat(client, "{default}<{olive}提示{default}> 当前状态无法使用该命令!");
 			return Plugin_Continue;
@@ -71,16 +65,7 @@ Action Command_ReportAmmo(int client, int args)
 		clip = GetWeaponClip(weapon);
 		ammo = GetWeaponAmmo(client, weapon);
 
-		#if BENCHMARK
-			g_profiler = new Profiler();
-			g_profiler.Start();
-		#endif
-		FormatWeaponName(wName, sizeof(wName), weapon);
-
-		#if BENCHMARK
-			g_profiler.Stop();
-			PrintToChatAll("执行耗时: %f", g_profiler.Time);
-		#endif
+		FormatWeaponName(weapon, wName, sizeof(wName));
 		
 		for (int i = 1; i <= MaxClients; i++)
 		{
@@ -100,17 +85,11 @@ Action Command_ReportAmmo(int client, int args)
 	return Plugin_Handled;
 }
 
-int FormatWeaponName(char[] buffer, int maxlen, int weapon)
+bool FormatWeaponName(int weapon, char[] buffer, int maxlen)
 {
 	GetEdictClassname(weapon, buffer, maxlen);
 
-	for (int i = 0; i < sizeof(g_sWeaponNames); i++)
-	{
-		if (strcmp(buffer[7], g_sWeaponNames[i][0]) == 0)
-		{
-			strcopy(buffer, maxlen, g_sWeaponNames[i][1]);
-		}
-	}
+	return g_hTrieWeaponList.GetString(buffer[7], buffer, maxlen);
 }
 
 int GetWeaponClip(int weapon)

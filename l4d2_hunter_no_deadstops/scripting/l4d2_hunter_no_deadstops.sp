@@ -22,7 +22,7 @@ public Plugin myinfo =
 	name = "[L4D2] No Hunter Deadstops (optimized version)",
 	author = "ProjectSky",
 	description = "Prevents deadstops but allows m2s on standing hunters",
-	version = "0.0.2",
+	version = "0.0.3",
 	url = "me@imsky.cc"
 }
 
@@ -32,7 +32,7 @@ public void OnPluginStart()
 	g_hHunterShovedTankAlive = CreateConVar("sm_allow_hunter_shoved_tank_alive", "0", "是否可以在坦克存活时推飞行状态的Hunter", FCVAR_NONE, true, 0.0, true, 1.0);
 	g_hHunterGroundGodframes = CreateConVar("sm_hunter_ground_godframes", "0.75", "hunter落地后无法被推开的时间", FCVAR_NONE, true, 0.0, true, 10.0);
 
-	GetCvars();
+	cvarChanged(null, "", "");
 
 	g_hAllowHunterShoved.AddChangeHook(cvarChanged);
 	g_hHunterShovedTankAlive.AddChangeHook(cvarChanged);
@@ -42,11 +42,6 @@ public void OnPluginStart()
 }
 
 void cvarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-	GetCvars();
-}
-
-void GetCvars()
 {
 	g_bAllowHunterShoved = g_hAllowHunterShoved.BoolValue;
 	g_bHunterShovedTankAlive = g_hHunterShovedTankAlive.BoolValue;

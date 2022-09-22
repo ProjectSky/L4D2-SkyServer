@@ -10,7 +10,7 @@
 #define START_SAFEROOM 1
 #define END_SAFEROOM 2
 
-#define VERSION "0.0.1"
+#define VERSION "0.0.2"
 
 Handle
 g_hSDKGetFlowPercentForPosition;
@@ -87,9 +87,9 @@ bool IsEntityInSafeRoom(int entity, int flag = BOTH_SAFEROOM)
 	float fPos[3];
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", fPos);
 
-	Address area = view_as<Address>(L4D_GetNearestNavArea(fPos));
+	Address area = L4D_GetNearestNavArea(fPos);
 
-	if (area == Address_Null) return false;
+	if (area == Address_Null) ThrowError("NavArea address is null!");
 
 	int spawnattributes = L4D_GetNavArea_SpawnAttributes(area);
 

@@ -41,7 +41,7 @@ public void OnPluginStart()
 {
 	g_hGunFireSI = CreateConVar("l4d2_slowdown_si", "0", "Manages slowdown from gunfire for SI", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	g_hGunFireTank = CreateConVar("l4d2_slowdown_tank", "0", "Manages slowdown from gunfire for Tank", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	g_hWaterSlow = CreateConVar("l4d2_slowdown_water", "1", "Manages survivor slowdown in the water during Tank fights", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_hWaterSlow = CreateConVar("l4d2_slowdown_water_tank_alive", "1", "Manages survivor slowdown in the water during Tank fights", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 
 	g_hSurvivorLimp = FindConVar("survivor_limp_health");
 
