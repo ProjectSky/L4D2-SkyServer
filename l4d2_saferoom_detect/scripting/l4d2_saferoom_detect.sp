@@ -71,7 +71,7 @@ int Native_IsEntityInEndSaferoom(Handle plugin, int numParams)
 int Native_IsEntityInSaferoom(Handle plugin, int numParams)
 {
 	int entity = GetNativeCell(1);
-	return IsEntityInSafeRoom(entity, BOTH_SAFEROOM);
+	return IsEntityInSafeRoom(entity);
 }
 
 /**
