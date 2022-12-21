@@ -5,7 +5,7 @@
 
 // ====================================================================================================
 // "L4D2 Survivor MVP notification" by "ProjectSky"
-//	Version: 0.1.2
+//	Version: 0.1.3
 // ====================================================================================================
 
 enum HitGroup
@@ -22,9 +22,9 @@ enum HitGroup
 
 enum MvpType
 {
-	MvpType_SI,
-	MvpType_CI,
-	MvpType_FF
+	MVP_SI,
+	MVP_CI,
+	MVP_FF
 }
 
 /**
@@ -89,28 +89,28 @@ native int MVP_GetBulletHit(int client);
  *  Get the client of accuracy
  *
  *  @param  client    client index
- * 	@return player accuracy
+ * 	@return accuracy
  */
 native float MVP_GetAccuracy(int client);
 
 /**
- *  Get the number of bullets hit group statistics
+ *  Get the number of bullets hit group statistics, default return HITGROUP_HEAD
  *
  *  @param  client    client index
- *  @param  HitGroup  hitgroup type
+ *  @param  hitgroup  hitgroup type
  *  @return hitgroup statistics
  */
-native int MVP_GetHitGroupStats(int client, HitGroup hitgroup);
+native int MVP_GetHitGroupStats(int client, HitGroup hitgroup = HITGROUP_HEAD);
 
 /**
- *  Get the client index by current MVP, default return MvpType_SI
+ *  Get the client index by current MVP, default return MVP_SI
  *
- *  @param MvpType_SI	Kill special infected
- *  @param MvpType_CI	Kill infected
- *  @param MvpType_FF	Friendly fire dmg
+ *  @param MVP_SI	Kill special infected
+ *  @param MVP_CI	Kill infected
+ *  @param MVP_FF	Friendly fire dmg
  *  @return mvp client index
  */
-native int MVP_GetMVPClient(MvpType type = MvpType_SI);
+native int MVP_GetMVPClient(MvpType type = MVP_SI);
 
 public SharedPlugin __pl_kill_mvp =
 {
